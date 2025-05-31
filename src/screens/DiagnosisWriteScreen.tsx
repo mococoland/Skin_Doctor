@@ -9,14 +9,72 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  Modal,
+  FlatList,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { DoctorStackParamList } from '../types/navigation';
+import type { DoctorStackParamList, Patient } from '../types/navigation';
 
 type Props = NativeStackScreenProps<DoctorStackParamList, 'DiagnosisWrite'>;
 
 const DiagnosisWriteScreen: React.FC<Props> = ({ navigation, route }) => {
   const { patientId, appointmentId, patientName } = route.params;
+
+  // 환자 목록 (실제로는 API에서 가져올 데이터)
+  const patientList: Patient[] = [
+    {
+      id: 'p001',
+      name: '김영희',
+      age: 28,
+      gender: '여성',
+      phone: '010-1234-5678',
+      email: 'kim@example.com',
+    },
+    {
+      id: 'p002',
+      name: '이철수',
+      age: 22,
+      gender: '남성',
+      phone: '010-2345-6789',
+      email: 'lee@example.com',
+    },
+    {
+      id: 'p003',
+      name: '박민정',
+      age: 35,
+      gender: '여성',
+      phone: '010-3456-7890',
+      email: 'park@example.com',
+    },
+    {
+      id: 'p004',
+      name: '정수현',
+      age: 45,
+      gender: '남성',
+      phone: '010-4567-8901',
+      email: 'jung@example.com',
+    },
+    {
+      id: 'p005',
+      name: '최미영',
+      age: 31,
+      gender: '여성',
+      phone: '010-5678-9012',
+      email: 'choi@example.com',
+    },
+  ];
+
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(
+    patientName === '새 환자' ? null : {
+      id: patientId,
+      name: patientName,
+      age: 0,
+      gender: '',
+      phone: '',
+      email: '',
+    }
+  );
+  const [showPatientModal, setShowPatientModal] = useState(false);
 
   const [diagnosisData, setDiagnosisData] = useState({
     diagnosis: '',
@@ -30,14 +88,24 @@ const DiagnosisWriteScreen: React.FC<Props> = ({ navigation, route }) => {
     notes: '',
   });
 
+  const handlePatientSelect = (patient: Patient) => {
+    setSelectedPatient(patient);
+    setShowPatientModal(false);
+  };
+
   const handleSave = () => {
+    if (!selectedPatient) {
+      Alert.alert('오류', '환자를 선택해주세요.');
+      return;
+    }
+    
     if (!diagnosisData.diagnosis || !diagnosisData.treatment) {
       Alert.alert('오류', '진단명과 치료 내용은 필수 입력 항목입니다.');
       return;
     }
 
     // 진료 결과 저장 로직
-    console.log('진료 결과 저장:', diagnosisData);
+    console.log('진료 결과 저장:', { patient: selectedPatient, diagnosis: diagnosisData });
     Alert.alert(
       '저장 완료',
       '진료 결과가 저장되었습니다.',
@@ -48,6 +116,11 @@ const DiagnosisWriteScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   const handleSendToPatient = () => {
+    if (!selectedPatient) {
+      Alert.alert('오류', '환자를 선택해주세요.');
+      return;
+    }
+    
     if (!diagnosisData.diagnosis || !diagnosisData.treatment) {
       Alert.alert('오류', '진단명과 치료 내용은 필수 입력 항목입니다.');
       return;
@@ -55,14 +128,14 @@ const DiagnosisWriteScreen: React.FC<Props> = ({ navigation, route }) => {
 
     Alert.alert(
       '환자에게 전송',
-      '진료 결과를 환자에게 전송하시겠습니까?',
+      `${selectedPatient.name} 환자에게 진료 결과를 전송하시겠습니까?`,
       [
         { text: '취소', style: 'cancel' },
         {
           text: '전송',
           onPress: () => {
             // 환자에게 전송 로직
-            console.log('환자에게 전송:', diagnosisData);
+            console.log('환자에게 전송:', { patient: selectedPatient, diagnosis: diagnosisData });
             Alert.alert(
               '전송 완료',
               '진료 결과가 환자에게 전송되었습니다.',
@@ -84,6 +157,20 @@ const DiagnosisWriteScreen: React.FC<Props> = ({ navigation, route }) => {
     );
   };
 
+  const renderPatientItem = ({ item }: { item: Patient }) => (
+    <TouchableOpacity
+      style={styles.patientItem}
+      onPress={() => handlePatientSelect(item)}
+    >
+      <View style={styles.patientItemInfo}>
+        <Text style={styles.patientItemName}>{item.name}</Text>
+        <Text style={styles.patientItemDetails}>
+          {item.age}세, {item.gender} | {item.phone}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -95,10 +182,26 @@ const DiagnosisWriteScreen: React.FC<Props> = ({ navigation, route }) => {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.patientInfo}>
-          <Text style={styles.patientName}>환자: {patientName}</Text>
-          <Text style={styles.appointmentInfo}>예약 ID: {appointmentId}</Text>
-        </View>
+        {/* 환자 선택 영역 */}
+        <TouchableOpacity 
+          style={styles.patientInfo}
+          onPress={() => setShowPatientModal(true)}
+        >
+          <View style={styles.patientInfoContent}>
+            <Text style={styles.patientName}>
+              환자: {selectedPatient ? selectedPatient.name : '환자를 선택하세요'}
+            </Text>
+            {selectedPatient && (
+              <Text style={styles.appointmentInfo}>
+                {selectedPatient.age}세, {selectedPatient.gender} | {selectedPatient.phone}
+              </Text>
+            )}
+            {!selectedPatient && (
+              <Text style={styles.selectPatientHint}>탭하여 환자를 선택하세요</Text>
+            )}
+          </View>
+          <Text style={styles.selectArrow}>›</Text>
+        </TouchableOpacity>
 
         {/* 진단 정보 */}
         <View style={styles.section}>
@@ -251,6 +354,30 @@ const DiagnosisWriteScreen: React.FC<Props> = ({ navigation, route }) => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* 환자 선택 모달 */}
+      <Modal
+        visible={showPatientModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowPatientModal(false)}>
+              <Text style={styles.modalCancelButton}>취소</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>환자 선택</Text>
+            <View style={styles.modalPlaceholder} />
+          </View>
+          
+          <FlatList
+            data={patientList}
+            renderItem={renderPatientItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.patientList}
+          />
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -270,16 +397,20 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e5e7eb',
   },
   backButton: {
+    width: 60,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+  },
+  backButtonText: {
     fontSize: 16,
     color: '#2563eb',
   },
   title: {
+    flex: 1,
     fontSize: 18,
     fontWeight: 'bold',
     color: '#1f2937',
-    flex: 1,              // 남은 공간을 모두 차지
-    textAlign: 'center',  // 텍스트 중앙 정렬
-   
+    textAlign: 'center',
   },
   saveButton: {
     fontSize: 16,
@@ -290,6 +421,8 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   patientInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: 'white',
     padding: 16,
     borderRadius: 12,
@@ -303,6 +436,9 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
+  patientInfoContent: {
+    flex: 1,
+  },
   patientName: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -312,6 +448,15 @@ const styles = StyleSheet.create({
   appointmentInfo: {
     fontSize: 14,
     color: '#6b7280',
+  },
+  selectPatientHint: {
+    fontSize: 14,
+    color: '#9ca3af',
+    fontStyle: 'italic',
+  },
+  selectArrow: {
+    fontSize: 20,
+    color: '#9ca3af',
   },
   section: {
     marginBottom: 24,
@@ -396,6 +541,62 @@ const styles = StyleSheet.create({
     color: '#374151',
     fontSize: 16,
     fontWeight: '500',
+  },
+  // 모달 스타일
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  modalCancelButton: {
+    fontSize: 16,
+    color: '#2563eb',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1f2937',
+  },
+  modalPlaceholder: {
+    width: 40,
+  },
+  patientList: {
+    padding: 16,
+  },
+  patientItem: {
+    backgroundColor: 'white',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  patientItemInfo: {
+    flex: 1,
+  },
+  patientItemName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1f2937',
+    marginBottom: 4,
+  },
+  patientItemDetails: {
+    fontSize: 14,
+    color: '#6b7280',
   },
 });
 
