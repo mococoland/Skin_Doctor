@@ -87,11 +87,20 @@ const DoctorProfileScreen: React.FC<Props> = ({ navigation }) => {
           text: '로그아웃',
           onPress: () => {
             dispatch(logout());
-            // Redux 상태가 변경되면 StackNavigator에서 자동으로 LoginScreen으로 이동
+            // 로그인 화면으로 직접 이동
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'LoginScreen' }],
+            });
           }
         }
       ]
     );
+  };
+
+  const handleChangePassword = () => {
+    // 비밀번호 변경 화면으로 이동
+    navigation.navigate('ChangePassword');
   };
 
   const handleCancel = () => {
@@ -126,7 +135,7 @@ const DoctorProfileScreen: React.FC<Props> = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         
-        <Text style={styles.title}>프로필</Text>
+        <Text style={styles.title}>       프로필</Text>
         <TouchableOpacity onPress={() => isEditing ? handleCancel() : setIsEditing(true)}>
           <Text style={styles.editButton}>{isEditing ? '취소' : '편집'}</Text>
         </TouchableOpacity>
@@ -254,7 +263,7 @@ const DoctorProfileScreen: React.FC<Props> = ({ navigation }) => {
           </View>
         </View>
 
-        {/* 설정 */}
+        {/* 설정 기능구현 안할거면 삭제해도 무방할듯? */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>설정</Text>
           <View style={styles.settingsCard}>
@@ -288,7 +297,10 @@ const DoctorProfileScreen: React.FC<Props> = ({ navigation }) => {
             </TouchableOpacity>
           )}
 
-          <TouchableOpacity style={styles.passwordButton}>
+          <TouchableOpacity 
+            style={styles.passwordButton} 
+            onPress={handleChangePassword}
+          >
             <Text style={styles.passwordButtonText}>비밀번호 변경</Text>
           </TouchableOpacity>
 
@@ -325,13 +337,20 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e5e7eb',
   },
   backButton: {
+    width: 60,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+  },
+  backButtonText: {
     fontSize: 16,
     color: '#2563eb',
   },
   title: {
+    flex: 1,
     fontSize: 18,
     fontWeight: 'bold',
     color: '#1f2937',
+    textAlign: 'center',
   },
   editButton: {
     fontSize: 16,
