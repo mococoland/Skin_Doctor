@@ -115,7 +115,7 @@ const DashboardScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* 빠른 작업 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>주요 기능</Text>
+          <Text style={styles.sectionTitle}>관리 기능</Text>
           {quickActions.map((action, index) => (
             <TouchableOpacity
               key={index}

@@ -67,7 +67,15 @@ const DiagnosisWriteScreen: React.FC<Props> = ({ navigation, route }) => {
               '전송 완료',
               '진료 결과가 환자에게 전송되었습니다.',
               [
-                { text: '확인', onPress: () => navigation.navigate('HomeScreen') }
+                { 
+                  text: '확인', 
+                  onPress: () => {
+                    navigation.reset({
+                      index: 0,
+                      routes: [{ name: 'DashboardScreen' }],
+                    });
+                  }
+                }
               ]
             );
           }

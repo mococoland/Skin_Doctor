@@ -190,9 +190,7 @@ const PatientHistoryDetailScreen: React.FC<Props> = ({ navigation, route }) => {
             <Text style={styles.newVisitButtonText}>새 진료 예약</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.messageButton}>
-            <Text style={styles.messageButtonText}>환자에게 메시지 보내기</Text>
-          </TouchableOpacity>
+          
         </View>
       </ScrollView>
     </SafeAreaView>

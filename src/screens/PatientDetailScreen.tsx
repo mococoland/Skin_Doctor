@@ -178,9 +178,7 @@ const PatientDetailScreen: React.FC<Props> = ({ navigation, route }) => {
             <Text style={styles.primaryButtonText}>진료 결과 작성</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.secondaryButton}>
-            <Text style={styles.secondaryButtonText}>환자에게 메시지 보내기</Text>
-          </TouchableOpacity>
+          
         </View>
       </ScrollView>
     </SafeAreaView>

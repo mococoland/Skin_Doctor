@@ -175,7 +175,7 @@ const PatientHistoryScreen: React.FC<Props> = ({ navigation }) => {
             patientName: item.patientName,
           })}
         >
-          <Text style={styles.newVisitButtonText}>새 진료</Text>
+          <Text style={styles.newVisitButtonText}>진료 요청서</Text>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
