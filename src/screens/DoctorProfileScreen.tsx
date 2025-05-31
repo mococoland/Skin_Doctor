@@ -1,3 +1,4 @@
+// 의사 프로필 화면
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -124,9 +125,7 @@ const DoctorProfileScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>← 뒤로</Text>
-        </TouchableOpacity>
+        
         <Text style={styles.title}>프로필</Text>
         <TouchableOpacity onPress={() => isEditing ? handleCancel() : setIsEditing(true)}>
           <Text style={styles.editButton}>{isEditing ? '취소' : '편집'}</Text>

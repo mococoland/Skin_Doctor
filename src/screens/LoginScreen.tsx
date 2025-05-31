@@ -1,3 +1,4 @@
+//로그인 화면
 import React, { useState } from 'react';
 import {
   View,
@@ -33,7 +34,17 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
       // 실제 로그인 API 호출 로직
       console.log('로그인 시도:', { email, password });
       
-      // 임시 로그인 성공 데이터 (실제로는 API 응답)
+      // 로그인 검증 로직 (실제로는 서버에서 검증)
+      const isValidLogin = email === '123' && password === '123';
+      
+      if (!isValidLogin) {
+        // 로그인 실패 - 현재 화면에 머물면서 에러 표시
+        Alert.alert('로그인 실패', '이메일 또는 비밀번호를 확인해주세요.');
+        setIsLoading(false);
+        return;
+      }
+      
+      // 로그인 성공 데이터
       const mockUserData = {
         user: {
           id: '1',
@@ -51,19 +62,31 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
       // Redux 상태 업데이트
       dispatch(login(mockUserData));
       
-      // 로그인 성공 시 자동으로 HomeScreen으로 이동 (StackNavigator에서 처리)
+      // 로그인 성공 시에만 대시보드로 이동
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'DashboardScreen' }],
+      });
       
     } catch (error) {
-      Alert.alert('로그인 실패', '이메일 또는 비밀번호를 확인해주세요.');
+      // 네트워크 오류 등의 예외 상황
+      Alert.alert('오류', '네트워크 연결을 확인해주세요.');
       console.error('로그인 오류:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
+
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
+        
+        <TouchableOpacity style={styles.backButton} >
+        
+        </TouchableOpacity>
+
         <View style={styles.header}>
           <Text style={styles.title}>의사 로그인</Text>
           <Text style={styles.subtitle}>Skin Doctor 의사용 앱</Text>
@@ -89,7 +112,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
               style={styles.input}
               value={password}
               onChangeText={setPassword}
-              placeholder="비밀번호를 입력하세요"
+              placeholder="password123 (테스트용)"
               secureTextEntry
               editable={!isLoading}
             />
@@ -104,6 +127,13 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
               {isLoading ? '로그인 중...' : '로그인'}
             </Text>
           </TouchableOpacity>
+
+          {/* 테스트용 안내 */}
+          <View style={styles.testInfo}>
+            <Text style={styles.testInfoText}>테스트 계정:</Text>
+            <Text style={styles.testInfoText}>이메일: doctor@example.com</Text>
+            <Text style={styles.testInfoText}>비밀번호: password123</Text>
+          </View>
         </View>
 
         <View style={styles.links}>
@@ -138,9 +168,21 @@ const styles = StyleSheet.create({
     padding: 20,
     justifyContent: 'center',
   },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    zIndex: 1,
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: '#2563eb',
+    fontWeight: '500',
+  },
   header: {
     alignItems: 'center',
     marginBottom: 40,
+    marginTop: 60,
   },
   title: {
     fontSize: 28,
@@ -187,6 +229,19 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+  },
+  testInfo: {
+    marginTop: 20,
+    padding: 12,
+    backgroundColor: '#f0f9ff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#bae6fd',
+  },
+  testInfoText: {
+    fontSize: 12,
+    color: '#0369a1',
+    textAlign: 'center',
   },
   links: {
     alignItems: 'center',

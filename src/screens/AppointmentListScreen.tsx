@@ -1,4 +1,4 @@
-// 예약목록 화면
+// 예약목록(예약관리) 화면
 import React, { useState } from 'react';
 import {
   View,
@@ -177,11 +177,9 @@ const AppointmentListScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>← 뒤로</Text>
-        </TouchableOpacity>
+        
         <Text style={styles.title}>예약 관리</Text>
-        <View style={styles.placeholder} />
+        
       </View>
 
       {/* 탭 메뉴 */}
@@ -250,13 +248,13 @@ const styles = StyleSheet.create({
     color: '#2563eb',
   },
   title: {
+    flex: 1,              // 남은 공간을 모두 차지
     fontSize: 18,
     fontWeight: 'bold',
     color: '#1f2937',
-  },
-  placeholder: {
-    width: 40,
-  },
+    textAlign: 'center',  // 텍스트 중앙 정렬
+},
+ 
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: 'white',

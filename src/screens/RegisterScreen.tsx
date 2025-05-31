@@ -1,3 +1,4 @@
+// 회원가입화면
 import React, { useState } from 'react';
 import {
   View,
@@ -129,12 +130,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.backButtonText}>← 뒤로</Text>
-          </TouchableOpacity>
+          
           <Text style={styles.title}>의사 회원가입</Text>
           <Text style={styles.subtitle}>
             피부과 의사 계정을 생성하여 진료 관리 시스템을 이용하세요

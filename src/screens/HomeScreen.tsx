@@ -1,3 +1,4 @@
+// 맨 처음 화면
 import React from 'react';
 import {
   View,
@@ -7,7 +8,14 @@ import {
   SafeAreaView,
   ScrollView,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { 
+  Stethoscope, 
+  UserPlus, 
+  Calendar, 
+  FileText, 
+  Users,
+  Heart
+} from 'lucide-react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { DoctorStackParamList } from '../types/navigation';
 
@@ -18,7 +26,10 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Text style={styles.title}>Skin Doctor</Text>
+          <View style={styles.logoContainer}>
+            <Heart size={40} color="#2563eb" />
+            <Text style={styles.title}>DOCTOR</Text>
+          </View>
           <Text style={styles.subtitle}>피부과 의사를 위한 진료 관리 시스템</Text>
         </View>
 
@@ -27,7 +38,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
             style={styles.card}
             onPress={() => navigation.navigate('LoginScreen')}
           >
-            <Icon name="local-hospital" size={40} color="#2563eb" />
+            <Stethoscope size={40} color="#2563eb" />
             <Text style={styles.cardTitle}>의사 로그인</Text>
             <Text style={styles.cardDescription}>
               기존 계정으로 로그인하여 진료를 시작하세요
@@ -38,7 +49,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
             style={styles.card}
             onPress={() => navigation.navigate('DoctorRegister')}
           >
-            <Icon name="person-add" size={40} color="#16a34a" />
+            <UserPlus size={40} color="#16a34a" />
             <Text style={styles.cardTitle}>신규 가입</Text>
             <Text style={styles.cardDescription}>
               새로운 의사 계정을 생성하세요
@@ -50,7 +61,9 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           <Text style={styles.featuresTitle}>주요 기능</Text>
           
           <View style={styles.featureItem}>
-            <Icon name="schedule" size={30} color="#2563eb" />
+            <View style={styles.featureIconContainer}>
+              <Calendar size={30} color="#2563eb" />
+            </View>
             <View style={styles.featureText}>
               <Text style={styles.featureTitle}>예약 관리</Text>
               <Text style={styles.featureDescription}>
@@ -60,7 +73,9 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           </View>
 
           <View style={styles.featureItem}>
-            <Icon name="assignment" size={30} color="#16a34a" />
+            <View style={styles.featureIconContainer}>
+              <FileText size={30} color="#16a34a" />
+            </View>
             <View style={styles.featureText}>
               <Text style={styles.featureTitle}>진료 기록</Text>
               <Text style={styles.featureDescription}>
@@ -70,7 +85,9 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           </View>
 
           <View style={styles.featureItem}>
-            <Icon name="people" size={30} color="#7c3aed" />
+            <View style={styles.featureIconContainer}>
+              <Users size={30} color="#7c3aed" />
+            </View>
             <View style={styles.featureText}>
               <Text style={styles.featureTitle}>환자 관리</Text>
               <Text style={styles.featureDescription}>
@@ -78,6 +95,12 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
               </Text>
             </View>
           </View>
+        </View>
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            안전하고 효율적인 진료 관리를 위한 솔루션
+          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -96,11 +119,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 30,
   },
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
     color: '#1f2937',
-    marginBottom: 8,
+    marginLeft: 8,
   },
   subtitle: {
     fontSize: 16,
@@ -153,6 +181,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
+    marginBottom: 20,
   },
   featuresTitle: {
     fontSize: 20,
@@ -165,6 +194,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
+  },
+  featureIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#f8fafc',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   featureText: {
     marginLeft: 15,
@@ -180,6 +217,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6b7280',
     lineHeight: 18,
+  },
+  footer: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  footerText: {
+    fontSize: 14,
+    color: '#9ca3af',
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
 });
 
