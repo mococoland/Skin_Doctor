@@ -1,3 +1,4 @@
+// 환자 상세 기록 화면
 import React from 'react';
 import {
   View,
@@ -118,10 +119,8 @@ const PatientHistoryDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>← 뒤로</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>환자 상세 기록</Text>
+        
+        <Text style={styles.title}>          환자 상세 기록</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -222,6 +221,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#1f2937',
+    textAlign: 'center',  // 텍스트 중앙 정렬
+    flex: 1,              // 남은 공간을 모두 차지
+    
   },
   placeholder: {
     width: 40,

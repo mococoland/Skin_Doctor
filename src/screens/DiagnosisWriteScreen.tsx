@@ -1,3 +1,4 @@
+// 진료 결과 작성 화면
 import React, { useState } from 'react';
 import {
   View,
@@ -78,10 +79,8 @@ const DiagnosisWriteScreen: React.FC<Props> = ({ navigation, route }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>← 뒤로</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>진료 결과 작성</Text>
+        
+        <Text style={styles.title}>       진료 결과 작성</Text>
         <TouchableOpacity onPress={handleSave}>
           <Text style={styles.saveButton}>저장</Text>
         </TouchableOpacity>
@@ -270,6 +269,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#1f2937',
+    flex: 1,              // 남은 공간을 모두 차지
+    textAlign: 'center',  // 텍스트 중앙 정렬
+   
   },
   saveButton: {
     fontSize: 16,

@@ -1,3 +1,4 @@
+// 환자 내역 화면
 import React, { useState } from 'react';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { DoctorStackParamList } from '../types/navigation'; 
@@ -183,10 +184,10 @@ const PatientHistoryScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>← 뒤로</Text>
+        <TouchableOpacity >
+          <Text style={styles.backButton}></Text>
         </TouchableOpacity>
-        <Text style={styles.title}>환자 내역</Text>
+        <Text style={styles.title}>      환자 내역</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -252,13 +253,16 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e5e7eb',
   },
   backButton: {
-    fontSize: 16,
-    color: '#2563eb',
-  },
+  justifyContent: 'center',
+  alignItems: 'center',
+  textAlign: 'center',
+  padding: 10, // 터치 영역 확보
+},
   title: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#1f2937',
+    
   },
   placeholder: {
     width: 40,

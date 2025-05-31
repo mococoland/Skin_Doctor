@@ -1,4 +1,4 @@
-// 
+// 대시보드 화면
 import React from 'react';
 import {
   View,
@@ -30,7 +30,7 @@ const DashboardScreen: React.FC<Props> = ({ navigation }) => {
       title: '예약 관리',
       description: '환자 예약 현황을 확인하고 진료요청서를 검토하세요',
       color: '#2563eb',
-      screen: 'AppointmentListScreen' as keyof DoctorStackParamList,
+      screen: 'AppointmentList' as keyof DoctorStackParamList, // 수정됨
     },
     {
       title: '진료 결과 작성',
@@ -60,20 +60,30 @@ const DashboardScreen: React.FC<Props> = ({ navigation }) => {
   ];
 
   const handleLogout = () => {
-    dispatch(logout());
-    // Redux 상태가 변경되면 StackNavigator에서 자동으로 LoginScreen으로 이동
-  };
+  dispatch(logout());
+  // LoginScreen으로 직접 이동하지 말고 HomeScreen으로 이동
+  navigation.reset({
+    index: 0,
+    routes: [{ name: 'HomeScreen' }],
+  });
+};
 
   const handleQuickAction = (screen: keyof DoctorStackParamList) => {
-    // DiagnosisWrite는 파라미터가 필요하므로 임시 데이터 사용
-    if (screen === 'DiagnosisWrite') {
-      navigation.navigate(screen, {
-        patientId: 'temp',
-        appointmentId: 'temp',
-        patientName: '새 환자',
-      });
-    } else {
-      navigation.navigate(screen as any);
+    try {
+      // DiagnosisWrite는 파라미터가 필요하므로 임시 데이터 사용
+      if (screen === 'DiagnosisWrite') {
+        navigation.navigate(screen, {
+          patientId: 'temp',
+          appointmentId: 'temp',
+          patientName: '새 환자',
+        });
+      } else {
+        navigation.navigate(screen as any);
+      }
+    } catch (error) {
+      console.error('네비게이션 오류:', error);
+      // 오류 발생 시 AppointmentList로 이동
+      navigation.navigate('AppointmentList');
     }
   };
 

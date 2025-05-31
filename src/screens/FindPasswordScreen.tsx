@@ -1,3 +1,4 @@
+// 비밀번호 찾기 화면
 import React, { useState } from 'react';
 import {
   View,
@@ -234,12 +235,7 @@ const FindPasswordScreen: React.FC<Props> = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.headerBackButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.headerBackText}>← 뒤로</Text>
-          </TouchableOpacity>
+         
           <Text style={styles.title}>비밀번호 찾기</Text>
           <Text style={styles.subtitle}>
             이메일과 의사 면허번호를 입력하여{'\n'}비밀번호를 재설정하세요
