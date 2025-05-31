@@ -130,9 +130,9 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
           {/* 테스트용 안내 */}
           <View style={styles.testInfo}>
-            <Text style={styles.testInfoText}>테스트 계정:</Text>
-            <Text style={styles.testInfoText}>이메일: doctor@example.com</Text>
-            <Text style={styles.testInfoText}>비밀번호: password123</Text>
+            <Text style={styles.testInfoText}>테스트 계정: 이건 나중에 삭제하면될듯</Text>
+            <Text style={styles.testInfoText}>이메일: 123</Text>
+            <Text style={styles.testInfoText}>비밀번호: 123</Text>
           </View>
         </View>
 

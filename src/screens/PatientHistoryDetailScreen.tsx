@@ -178,20 +178,7 @@ const PatientHistoryDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         </View>
 
         {/* 액션 버튼들 */}
-        <View style={styles.actionSection}>
-          <TouchableOpacity 
-            style={styles.newVisitButton}
-            onPress={() => navigation.navigate('PatientDetail', {
-              patientId,
-              appointmentId: `new_${Date.now()}`,
-              patientName,
-            })}
-          >
-            <Text style={styles.newVisitButtonText}>새 진료 예약</Text>
-          </TouchableOpacity>
-          
-          
-        </View>
+        
       </ScrollView>
     </SafeAreaView>
   );
