@@ -8,7 +8,7 @@ const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
  */
 const config = {
   server: {
-    port: 8001, // 의사앱용 포트
+    port: 8081, // 기본 포트 사용
   },
 };
 
