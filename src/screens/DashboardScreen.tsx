@@ -1,24 +1,87 @@
 // 대시보드 화면
 import type React from "react"
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } from "react-native"
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from "react-native"
 import { useDispatch, useSelector } from "react-redux"
+import { useState, useEffect } from "react"
 import { logout } from "../store/authSlice"
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import type { DoctorStackParamList } from "../types/navigation"
 import type { RootState } from "../store/store"
+import { appointmentApi, diagnosisApi, type Appointment, type DiagnosisRequest } from "../services/medicalService"
 
 type Props = NativeStackScreenProps<DoctorStackParamList, "DashboardScreen">
 
 const DashboardScreen: React.FC<Props> = ({ navigation }) => {
   const dispatch = useDispatch()
   const user = useSelector((state: RootState) => state.auth.user)
+  
+  // 상태 관리
+  const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [diagnosisRequests, setDiagnosisRequests] = useState<DiagnosisRequest[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // 통계 데이터 계산
+  const getTodayAppointments = () => {
+    const today = new Date().toISOString().split('T')[0]
+    return appointments.filter(apt => apt.appointment_date === today)
+  }
+
+  const getPendingAppointments = () => {
+    return appointments.filter(apt => apt.status === 'scheduled')
+  }
+
+  const getCompletedAppointments = () => {
+    return appointments.filter(apt => apt.status === 'completed')
+  }
+
+  const getTotalPatients = () => {
+    const uniquePatients = new Set(appointments.map(apt => apt.patient_id))
+    return uniquePatients.size
+  }
 
   const statsData = [
-    { title: "오늘 예약", count: "8건", color: "#2563eb" },
-    { title: "대기 중", count: "3건", color: "#f59e0b" },
-    { title: "완료", count: "5건", color: "#10b981" },
-    { title: "총 환자", count: "156명", color: "#8b5cf6" },
+    { title: "오늘 예약", count: `${getTodayAppointments().length}건`, color: "#2563eb" },
+    { title: "대기 중", count: `${getPendingAppointments().length}건`, color: "#f59e0b" },
+    { title: "완료", count: `${getCompletedAppointments().length}건`, color: "#10b981" },
+    { title: "총 환자", count: `${getTotalPatients()}명`, color: "#8b5cf6" },
   ]
+
+  // 데이터 로드 함수
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      // 현재 로그인한 의사의 ID (실제로는 인증 정보에서 가져와야 함)
+      const doctorId = user?.id || 1
+      
+      // 병렬로 데이터 로드
+      const [appointmentsData, diagnosisData] = await Promise.all([
+        appointmentApi.getAppointments(doctorId),
+        diagnosisApi.getDiagnosisRequests(doctorId)
+      ])
+      
+      setAppointments(appointmentsData)
+      setDiagnosisRequests(diagnosisData)
+    } catch (err) {
+      console.error('대시보드 데이터 로드 오류:', err)
+      setError('데이터를 불러오는 중 오류가 발생했습니다.')
+      Alert.alert('오류', '데이터를 불러오는 중 오류가 발생했습니다. 백엔드 서버가 실행 중인지 확인해주세요.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // 컴포넌트 마운트 시 데이터 로드
+  useEffect(() => {
+    loadDashboardData()
+  }, [])
+
+  // 새로고침 함수
+  const handleRefresh = () => {
+    loadDashboardData()
+  }
 
   const quickActions = [
     {
