@@ -1,102 +1,163 @@
-<<<<<<< HEAD
-# Skin_Doctor
-skin_doctor
-=======
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# 🩺 Skin Doctor App
 
-# Getting Started
+의사용 피부 진단 앱 - 환자의 피부 상태를 확인하고 진단을 제공하는 의료진용 앱입니다.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+---
 
-## Step 1: Start Metro
+## 🚀 개발 환경 실행 가이드
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+### ✅ 1. 프로젝트 설정
 
-To start the Metro dev server, run the following command from the root of your React Native project:
-
-```sh
-# Using npm
-npm start
-
-# OR using Yarn
-yarn start
+```bash
+cd doctor-app
+npm install
 ```
 
-## Step 2: Build and run your app
+### ✅ 2. 개발 서버 실행
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
+**처음 설치 시 (한 번만 실행):**
+```bash
+npm run android:full  # adb reverse + 앱 빌드&설치
 ```
 
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
+**개발 중 (매번 실행):**
+```bash
+npm run dev  # adb reverse + Metro 서버 시작
 ```
 
-Then, and every time you update your native dependencies, run:
+### ✅ 3. 포트 설정
 
-```sh
-bundle exec pod install
+- **의사 앱 Metro 서버**: `8081` (기본 포트)
+- **백엔드 API**: `8000`
+- **환자 앱 Metro 서버**: `8082`
+
+### ✅ 4. 사용 가능한 스크립트
+
+```bash
+npm run dev          # 개발 서버 시작 (adb reverse 포함)
+npm run setup        # adb reverse 설정만
+npm run start:doctor # Metro 서버만 시작
+npm run android      # 앱 빌드 & 실행
+npm run android:full # 포트 설정 + 앱 빌드 & 실행
 ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+---
 
-```sh
-# Using npm
-npm run ios
+## 🛠 GitHub 협업 가이드: 기능 개발부터 병합까지 (꼭 읽어주세요!)
 
-# OR using Yarn
-yarn ios
+이 프로젝트는 안정적인 협업을 위해 `main` 브랜치를 보호하고, 모든 작업을 **별도 브랜치 + Pull Request(PR)** 방식으로 관리합니다.
+
+---
+
+### ✅ 1. 기능 개발 시작 전
+
+1. **main 최신화**
+```bash
+git checkout main
+git pull origin main
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+2. **작업용 브랜치 생성**
+```bash
+git checkout -b feature/이름-작업내용
+# 예: feature/jisu-diagnosis-api
+```
+> `feature/`, `fix/`, `docs/` 등 prefix 사용 규칙 지켜주세요.
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+---
 
-## Step 3: Modify your app
+### ✅ 2. 기능 개발 중
 
-Now that you have successfully run the app, let's make changes!
+1. **코드 작성**
+   - 코드 수정/추가
+   - 디렉토리 구조 유지
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+2. **변경사항 저장**
+```bash
+git add .
+git commit -m "작업 내용 요약: 진단 API 연동 추가"
+```
+> 커밋 메시지는 **의미 있는 한 줄 설명**으로 남겨주세요.
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+3. **원격 브랜치 푸시**
+```bash
+git push origin feature/이름-작업내용
+```
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+---
 
-## Congratulations! :tada:
+### ✅ 3. 기능 완료 후 PR 생성
 
-You've successfully run and modified your React Native App. :partying_face:
+1. GitHub 웹에서 `Pull Request` 클릭
+2. `base`는 `main`, `compare`는 자신의 브랜치로 설정
+3. PR 제목은 작업 요약 (예: `의사 진단 API 연동 기능 추가`)
+4. 본문에는 **한 줄 기능 설명**, 참고 이슈, 변경파일 요약 등 작성
+5. 팀원 리뷰어 지정
 
-### Now what?
+---
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+### ✅ 4. 코드 리뷰 & 피드백 반영
 
-# Troubleshooting
+- 리뷰 요청 받은 팀원은 코드 확인 후 **승인 or 피드백 댓글**
+- 필요시 추가 커밋 → PR에 자동 반영됨
+```bash
+git add .
+git commit -m "리뷰 반영: API 에러 핸들링 추가"
+git push
+```
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+---
 
-# Learn More
+### ✅ 5. 병합(Merge) & 브랜치 삭제
 
-To learn more about React Native, take a look at the following resources:
+- 리뷰 승인 ≥ 1명 완료되면 `main` 브랜치로 병합 (Squash 추천)
+- 병합 후, 브랜치 삭제 (GitHub에서 버튼 제공됨)
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
->>>>>>> d328dd4 (Initial commit)
+---
+
+### ✅ 6. Pull 후 다음 작업 준비
+
+모든 병합이 끝났으면 다시 main을 pull 받아 최신 상태로 시작하세요:
+```bash
+git checkout main
+git pull origin main
+```
+
+---
+
+## 💡 브랜치 명명 규칙
+
+| 작업 유형     | 브랜치 예시                      |
+|--------------|----------------------------------|
+| 기능 추가     | `feature/jay-patient-list`       |
+| 버그 수정     | `fix/jisu-diagnosis-api`         |
+| 문서/리드미   | `docs/update-readme`             |
+| 테스트        | `test/yeon-api-validation`       |
+
+---
+
+## ❗주의 사항
+
+- 절대 `main` 브랜치에서 직접 작업하지 마세요.
+- 무조건 **기능 단위로 브랜치 생성 → PR → 머지** 순서로 진행합니다.
+- 충돌 방지를 위해 작업 전 항상 `git pull origin main`을 먼저 하세요.
+- 개발 시 반드시 `npm run dev`로 Metro 서버를 시작하세요.
+
+---
+
+## 📱 앱 구조
+
+```
+src/
+├── components/     # 재사용 가능한 UI 컴포넌트
+├── screens/       # 화면별 컴포넌트
+├── navigation/    # 네비게이션 설정
+├── services/      # API 통신 로직
+├── config/        # 앱 설정 및 상수
+└── types/         # TypeScript 타입 정의
+```
+
+---
+
+이 가이드는 모든 기능 개발의 기본 루틴입니다.  
+작업 전에 꼭 확인하고, 팀원 모두 동일한 흐름으로 협업해 주세요 🙏
