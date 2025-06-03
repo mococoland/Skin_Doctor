@@ -99,7 +99,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
               style={styles.input}
               value={email}
               onChangeText={setEmail}
-              placeholder="doctor@example.com"
+              placeholder="이메일을 입력하세요"
               keyboardType="email-address"
               autoCapitalize="none"
               editable={!isLoading}
@@ -112,7 +112,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
               style={styles.input}
               value={password}
               onChangeText={setPassword}
-              placeholder="password123 (테스트용)"
+              placeholder="비밀번호를 입력하세요"
               secureTextEntry
               editable={!isLoading}
             />
@@ -127,13 +127,6 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
               {isLoading ? '로그인 중...' : '로그인'}
             </Text>
           </TouchableOpacity>
-
-          {/* 테스트용 안내 */}
-          <View style={styles.testInfo}>
-            <Text style={styles.testInfoText}>테스트 계정: 이건 나중에 삭제하면될듯</Text>
-            <Text style={styles.testInfoText}>이메일: 123</Text>
-            <Text style={styles.testInfoText}>비밀번호: 123</Text>
-          </View>
         </View>
 
         <View style={styles.links}>
@@ -229,19 +222,6 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
-  },
-  testInfo: {
-    marginTop: 20,
-    padding: 12,
-    backgroundColor: '#f0f9ff',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#bae6fd',
-  },
-  testInfoText: {
-    fontSize: 12,
-    color: '#0369a1',
-    textAlign: 'center',
   },
   links: {
     alignItems: 'center',

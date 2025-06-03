@@ -18,9 +18,12 @@ export const API_CONFIG = {
     USERS: '/api/users',
     
     // 의료 기록 관련
-    MEDICAL_RECORDS: '/api/medical/records',
+    MEDICAL_RECORDS: '/api/medical/medical-records',
     DOCTOR_REVIEWS: '/api/medical/reviews',
-  }
+  },
+  HEADERS: {
+    'Content-Type': 'application/json',
+  },
 };
 
 // API 호출 헬퍼 함수
@@ -39,6 +42,17 @@ export const apiCall = async (endpoint: string, options: RequestInit = {}) => {
     });
 
     if (!response.ok) {
+      // 422 에러인 경우 응답 본문을 로그로 출력
+      if (response.status === 422) {
+        try {
+          const errorText = await response.text();
+          console.error(`422 에러 - URL: ${url}`);
+          console.error(`422 에러 - 요청 본문:`, options.body);
+          console.error(`422 에러 - 응답 본문:`, errorText);
+        } catch (textError) {
+          console.error('422 에러 본문 읽기 실패:', textError);
+        }
+      }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 

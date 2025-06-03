@@ -1,13 +1,14 @@
 // 대시보드 화면
-import type React from "react"
+import React from "react"
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from "react-native"
 import { useDispatch, useSelector } from "react-redux"
 import { useState, useEffect } from "react"
+import { useFocusEffect } from '@react-navigation/native'
 import { logout } from "../store/authSlice"
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import type { DoctorStackParamList } from "../types/navigation"
 import type { RootState } from "../store/store"
-import { appointmentApi, diagnosisApi, doctorApi, type Appointment, type DiagnosisRequest } from "../services/medicalService"
+import { appointmentApi, diagnosisApi, doctorApi, notificationApi, type Appointment, type DiagnosisRequest, type DoctorNotification } from "../services/medicalService"
 
 type Props = NativeStackScreenProps<DoctorStackParamList, "DashboardScreen">
 
@@ -18,6 +19,7 @@ const DashboardScreen = ({ navigation }: Props) => {
   // 상태 관리
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [diagnosisRequests, setDiagnosisRequests] = useState<DiagnosisRequest[]>([])
+  const [notifications, setNotifications] = useState<DoctorNotification[]>([])
   const [stats, setStats] = useState({
     today_appointments: 0,
     pending_appointments: 0,
@@ -25,6 +27,7 @@ const DashboardScreen = ({ navigation }: Props) => {
     total_patients: 0
   })
   const [loading, setLoading] = useState(true)
+  const [notificationLoading, setNotificationLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const statsData = [
@@ -60,10 +63,65 @@ const DashboardScreen = ({ navigation }: Props) => {
     }
   }
 
-  // 컴포넌트 마운트 시 데이터 로드
-  useEffect(() => {
-    loadDashboardData()
-  }, [])
+  // ⭐ 알림 데이터 로드 함수
+  const loadNotifications = async () => {
+    try {
+      console.log('🔔 알림 데이터 로딩 시작...')
+      setNotificationLoading(true)
+      const doctorId = 1
+      const notificationData = await notificationApi.getDoctorNotifications(doctorId)
+      console.log('📝 받은 알림 데이터:', notificationData)
+      console.log('📊 알림 데이터 타입:', typeof notificationData)
+      console.log('📊 알림 배열 여부:', Array.isArray(notificationData))
+      console.log('📊 알림 개수:', notificationData?.length)
+      
+      // 모든 알림 표시 (slice 제거)
+      console.log('✂️ 전체 알림 데이터:', notificationData)
+      console.log('✂️ 전체 알림 개수:', notificationData.length)
+      
+      setNotifications(notificationData) // 모든 알림 표시
+      console.log('✅ 알림 상태 업데이트 완료')
+    } catch (error) {
+      console.error('❌ 알림 데이터 로드 실패:', error)
+    } finally {
+      setNotificationLoading(false)
+      console.log('🏁 알림 로딩 상태 해제 완료')
+    }
+  }
+
+  // ⭐ 알림 클릭 처리
+  const handleNotificationPress = (notification: DoctorNotification) => {
+    Alert.alert(
+      '알림', 
+      `${notification.patientName}님의 취소된 예약으로 이동하시겠습니까?`,
+      [
+        { text: '취소', style: 'cancel' },
+        { 
+          text: '이동', 
+          onPress: () => {
+            // 예약 상세 화면으로 이동 (읽음 처리는 PatientDetailScreen에서 자동 처리됨)
+            navigation.navigate('PatientDetail', {
+              patientId: '',
+              appointmentId: notification.appointmentId.toString(),
+              patientName: notification.patientName,
+              diagnosisRequestId: undefined,
+            })
+            
+            // 로컬 상태 제거 코드 제거 - 화면 포커스 시 자동으로 새로고침됨
+          }
+        }
+      ]
+    )
+  }
+
+  // 화면이 포커스될 때마다 모든 데이터 새로고침
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('🔄 DashboardScreen 포커스됨 - 모든 데이터 새로고침')
+      loadDashboardData()
+      loadNotifications()
+    }, [])
+  )
 
   // 새로고침 함수
   const handleRefresh = () => {
@@ -97,19 +155,6 @@ const DashboardScreen = ({ navigation }: Props) => {
     },
   ]
 
-  const recentNotifications = [
-    {
-      title: "새로운 예약이 있습니다",
-      description: "김영희 환자 - 오후 2:00",
-      time: "5분 전",
-    },
-    {
-      title: "진료 결과가 전송되었습니다",
-      description: "이철수 환자",
-      time: "1시간 전",
-    },
-  ]
-
   const handleLogout = () => {
     dispatch(logout())
     // 홈스크린으로 이동하도록 변경
@@ -121,13 +166,9 @@ const DashboardScreen = ({ navigation }: Props) => {
 
   const handleQuickAction = (screen: keyof DoctorStackParamList) => {
     try {
-      // DiagnosisWrite는 파라미터가 필요하므로 임시 데이터 사용
+      // DiagnosisWrite는 특정 예약에서만 접근 가능하므로 AppointmentList의 완료 탭으로 이동
       if (screen === "DiagnosisWrite") {
-        navigation.navigate(screen, {
-          patientId: "temp",
-          appointmentId: "temp",
-          patientName: "새 환자",
-        })
+        navigation.navigate("AppointmentList", { initialTab: 'completed' });
       } else {
         navigation.navigate(screen as any)
       }
@@ -183,25 +224,45 @@ const DashboardScreen = ({ navigation }: Props) => {
         {/* 최근 알림 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>최근 알림</Text>
-          <View style={styles.notificationCard}>
-            {recentNotifications.map((notification, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.notificationItem,
-                  {
-                    borderBottomWidth: index === recentNotifications.length - 1 ? 0 : 1,
-                  },
-                ]}
-              >
-                <View style={styles.notificationContent}>
-                  <Text style={styles.notificationTitle}>{notification.title}</Text>
-                  <Text style={styles.notificationDescription}>{notification.description}</Text>
-                </View>
-                <Text style={styles.notificationTime}>{notification.time}</Text>
+          {notificationLoading ? (
+            <View style={styles.notificationCard}>
+              <ActivityIndicator size="small" color="#6b7280" />
+              <Text style={{ textAlign: 'center', color: '#6b7280', marginTop: 8 }}>알림을 불러오는 중...</Text>
+            </View>
+          ) : notifications.length > 0 ? (
+            <ScrollView 
+              style={styles.notificationScrollView}
+              showsVerticalScrollIndicator={true}
+              nestedScrollEnabled={true}
+            >
+              <View style={styles.notificationCard}>
+                {notifications.map((notification, index) => (
+                  <TouchableOpacity
+                    key={notification.id}
+                    style={[
+                      styles.notificationItem,
+                      {
+                        borderBottomWidth: index === notifications.length - 1 ? 0 : 1,
+                      },
+                    ]}
+                    onPress={() => handleNotificationPress(notification)}
+                  >
+                    <View style={styles.notificationContent}>
+                      <Text style={styles.notificationTitle}>예약이 취소되었습니다</Text>
+                      <Text style={styles.notificationDescription}>
+                        {notification.patientName} - {notification.formattedTime || notification.appointmentTime}
+                      </Text>
+                    </View>
+                    <Text style={styles.notificationTime}>{notification.cancelledAt}</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
-            ))}
-          </View>
+            </ScrollView>
+          ) : (
+            <View style={styles.notificationCard}>
+              <Text style={{ textAlign: 'center', color: '#6b7280' }}>새로운 알림이 없습니다.</Text>
+            </View>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -379,6 +440,9 @@ const styles = StyleSheet.create({
   notificationTime: {
     fontSize: 12,
     color: "#9ca3af",
+  },
+  notificationScrollView: {
+    maxHeight: 200,
   },
 })
 

@@ -1,5 +1,5 @@
 // 환자 상세 기록 화면
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,9 +8,12 @@ import {
   ScrollView,
   TouchableOpacity,
   FlatList,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { DoctorStackParamList } from '../types/navigation';
+import { patientApi, medicalService } from '../services/medicalService';
 
 type Props = NativeStackScreenProps<DoctorStackParamList, 'PatientHistoryDetail'>;
 
@@ -20,68 +23,136 @@ interface PatientInfo {
   age: number;
   gender: string;
   phone: string;
-  email: string;
+  email?: string;
   firstVisit: string;
   totalVisits: number;
-  allergies: string;
-  medicalHistory: string;
+  allergies?: string;
+  medicalHistory?: string;
 }
 
 interface VisitRecord {
-  id: string;
+  id: number;
   date: string;
   diagnosis: string;
   treatment: string;
-  medication: string;
-  notes: string;
+  medication?: string;
+  notes?: string;
+  precautions?: string;
   status: 'completed';
+  appointmentId: number;
 }
+
+const TEMP_DOCTOR_ID = 1; // 임시 의사 ID
 
 const PatientHistoryDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const { patientId, patientName } = route.params;
 
-  const patientInfo: PatientInfo = {
-    id: patientId,
-    name: patientName,
-    age: 28,
-    gender: '여성',
-    phone: '010-1234-5678',
-    email: 'kim@example.com',
-    firstVisit: '2023-08-15',
-    totalVisits: 3,
-    allergies: '페니실린, 견과류',
-    medicalHistory: '아토피 피부염 (2020년 진단)',
-  };
+  const [patientInfo, setPatientInfo] = useState<PatientInfo | null>(null);
+  const [visitHistory, setVisitHistory] = useState<VisitRecord[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const visitHistory: VisitRecord[] = [
-    {
-      id: '1',
-      date: '2024-01-20',
-      diagnosis: '접촉성 피부염',
-      treatment: '스테로이드 연고 처방, 항히스타민제 복용',
-      medication: '베타메타손 연고, 세티리진 10mg',
-      notes: '증상 호전됨. 2주 후 재진 권장',
-      status: 'completed',
-    },
-    {
-      id: '2',
-      date: '2023-12-10',
-      diagnosis: '아토피 피부염 악화',
-      treatment: '보습제 사용법 교육, 면역억제제 처방',
-      medication: '타크로리무스 연고, 세라마이드 보습제',
-      notes: '스트레스로 인한 악화. 생활습관 개선 필요',
-      status: 'completed',
-    },
-    {
-      id: '3',
-      date: '2023-08-15',
-      diagnosis: '아토피 피부염 초진',
-      treatment: '기본 검사, 알레르기 테스트',
-      medication: '하이드로코르티손 연고',
-      notes: '첫 진료. 환자 교육 실시',
-      status: 'completed',
-    },
-  ];
+  useEffect(() => {
+    loadPatientData();
+  }, []);
+
+  const loadPatientData = async () => {
+    try {
+      setLoading(true);
+      
+      // 1. 환자 기본 정보 가져오기 (의사의 환자 목록에서)
+      const patients = await patientApi.getDoctorPatients(TEMP_DOCTOR_ID);
+      const currentPatient = patients.find(p => p.patientId === patientId);
+      
+      if (!currentPatient) {
+        Alert.alert('오류', '환자 정보를 찾을 수 없습니다.');
+        navigation.goBack();
+        return;
+      }
+
+      // 2. 해당 환자의 모든 예약 기록 가져오기
+      const appointments = await medicalService.getAppointments(TEMP_DOCTOR_ID);
+      const patientAppointments = appointments.filter(apt => apt.user_id.toString() === patientId);
+      
+      // 첫 진료일 계산 (가장 오래된 예약)
+      const sortedAppointments = patientAppointments.sort((a, b) => 
+        new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime()
+      );
+      const firstVisit = sortedAppointments.length > 0 ? sortedAppointments[0].appointment_date : currentPatient.lastVisit;
+
+      // 사용자 이메일 정보 추출 (첫 번째 예약에서)
+      const userEmail = patientAppointments.length > 0 && patientAppointments[0].user 
+        ? patientAppointments[0].user.email 
+        : 'kim@example.com';
+
+      // 환자 기본 정보 설정
+      setPatientInfo({
+        id: currentPatient.patientId,
+        name: currentPatient.patientName,
+        age: currentPatient.age,
+        gender: currentPatient.gender,
+        phone: currentPatient.phone,
+        email: userEmail || 'kim@example.com', // 실제 이메일 우선, 없으면 기본값
+        firstVisit: firstVisit,
+        totalVisits: currentPatient.totalVisits,
+        allergies: '정보 없음', // API에서 제공되지 않으므로 기본값
+        medicalHistory: '정보 없음', // API에서 제공되지 않으므로 기본값
+      });
+
+      // 3. 완료된 예약들의 진료 기록 가져오기
+      const completedAppointments = patientAppointments.filter(apt => apt.status === 'completed');
+      const visitRecords: VisitRecord[] = [];
+
+      for (const appointment of completedAppointments) {
+        try {
+          // 각 예약에 대한 진료 기록 조회
+          const medicalRecordResponse = await fetch(`http://10.0.2.2:8000/api/medical/medical-records/appointment/${appointment.id}`);
+          const medicalRecordData = await medicalRecordResponse.json();
+          
+          if (medicalRecordData.exists && medicalRecordData.data) {
+            const record = medicalRecordData.data;
+            visitRecords.push({
+              id: record.id,
+              date: appointment.appointment_date,
+              diagnosis: record.diagnosis || '진단 정보 없음',
+              treatment: record.treatment || '치료 정보 없음',
+              medication: record.prescription || '처방 정보 없음',
+              notes: record.notes || '메모 없음',
+              precautions: record.precautions || '주의사항 없음',
+              status: 'completed',
+              appointmentId: appointment.id
+            });
+          } else {
+            // 진료 기록이 없는 완료된 예약
+            visitRecords.push({
+              id: appointment.id,
+              date: appointment.appointment_date,
+              diagnosis: '진료 기록 없음',
+              treatment: '기록되지 않음',
+              medication: '처방 정보 없음',
+              notes: '진료 기록이 생성되지 않았습니다.',
+              precautions: '주의사항 없음',
+              status: 'completed',
+              appointmentId: appointment.id
+            });
+          }
+        } catch (error) {
+          console.error(`예약 ${appointment.id}의 진료 기록 조회 실패:`, error);
+        }
+      }
+
+      // 날짜순 정렬 (최신 순)
+      visitRecords.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      setVisitHistory(visitRecords);
+
+      console.log(`✅ 환자 ${patientName} 정보 로드 성공: 총 ${visitRecords.length}개 진료 기록`);
+      
+    } catch (error) {
+      console.error('❌ 환자 데이터 로드 실패:', error);
+      Alert.alert('오류', '환자 정보를 불러올 수 없습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const renderVisitItem = ({ item }: { item: VisitRecord }) => (
     <View style={styles.visitCard}>
@@ -108,6 +179,11 @@ const PatientHistoryDetailScreen: React.FC<Props> = ({ navigation, route }) => {
           <Text style={styles.visitValue}>{item.medication}</Text>
         </View>
         
+        <View style={styles.visitRow}>
+          <Text style={styles.visitLabel}>주의사항:</Text>
+          <Text style={styles.visitValue}>{item.precautions}</Text>
+        </View>
+        
         <View style={styles.notesContainer}>
           <Text style={styles.notesLabel}>의사 메모:</Text>
           <Text style={styles.notesText}>{item.notes}</Text>
@@ -116,11 +192,48 @@ const PatientHistoryDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     </View>
   );
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={styles.backButton}>← 뒤로</Text>
+          </TouchableOpacity>
+          <Text style={styles.title}>환자 상세 기록</Text>
+          <View style={styles.placeholder} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#2563eb" />
+          <Text style={styles.loadingText}>환자 정보를 불러오는 중...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!patientInfo) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={styles.backButton}>← 뒤로</Text>
+          </TouchableOpacity>
+          <Text style={styles.title}>환자 상세 기록</Text>
+          <View style={styles.placeholder} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.errorText}>환자 정보를 찾을 수 없습니다.</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        
-        <Text style={styles.title}>          환자 상세 기록</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text style={styles.backButton}>← 뒤로</Text>
+        </TouchableOpacity>
+        <Text style={styles.title}>환자 상세 기록</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -169,16 +282,19 @@ const PatientHistoryDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         {/* 진료 기록 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>진료 기록</Text>
-          <FlatList
-            data={visitHistory}
-            renderItem={renderVisitItem}
-            keyExtractor={(item) => item.id}
-            scrollEnabled={false}
-          />
+          {visitHistory.length > 0 ? (
+            <FlatList
+              data={visitHistory}
+              renderItem={renderVisitItem}
+              keyExtractor={(item) => item.id.toString()}
+              scrollEnabled={false}
+            />
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>등록된 진료 기록이 없습니다.</Text>
+            </View>
+          )}
         </View>
-
-        {/* 액션 버튼들 */}
-        
       </ScrollView>
     </SafeAreaView>
   );
@@ -198,20 +314,18 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
   },
-  backButton: {
-    fontSize: 16,
-    color: '#2563eb',
-  },
   title: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#1f2937',
-    textAlign: 'center',  // 텍스트 중앙 정렬
-    flex: 1,              // 남은 공간을 모두 차지
-    
+  },
+  backButton: {
+    fontSize: 16,
+    color: '#2563eb',
+    fontWeight: '500',
   },
   placeholder: {
-    width: 40,
+    width: 60, // backButton과 같은 너비로 중앙 정렬
   },
   scrollContent: {
     padding: 16,
@@ -391,6 +505,30 @@ const styles = StyleSheet.create({
     color: '#374151',
     fontSize: 16,
     fontWeight: '500',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#1f2937',
+    marginTop: 16,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#dc2626',
+    marginTop: 16,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#6b7280',
   },
 });
 

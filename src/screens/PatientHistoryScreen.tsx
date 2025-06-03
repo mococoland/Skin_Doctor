@@ -1,5 +1,5 @@
 // 환자 내역 화면
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { DoctorStackParamList } from '../types/navigation'; 
 import {
@@ -10,88 +10,49 @@ import {
   FlatList,
   TouchableOpacity,
   TextInput,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
+import { patientApi, type PatientHistoryItem } from '../services/medicalService';
 
 type Props = NativeStackScreenProps<DoctorStackParamList, 'PatientHistory'>;
 
-interface PatientHistoryItem {
-  id: string;
-  patientId: string;
-  patientName: string;
-  age: number;
-  gender: string;
-  lastVisit: string;
-  diagnosis: string;
-  totalVisits: number;
-  phone: string;
-  status: 'ongoing' | 'completed';
-}
+const TEMP_DOCTOR_ID = 1; // 임시 의사 ID
 
 const PatientHistoryScreen: React.FC<Props> = ({ navigation }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [patientHistory, setPatientHistory] = useState<PatientHistoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const patientHistory: PatientHistoryItem[] = [
-    {
-      id: '1',
-      patientId: 'p001',
-      patientName: '김영희',
-      age: 28,
-      gender: '여성',
-      lastVisit: '2024-01-20',
-      diagnosis: '접촉성 피부염',
-      totalVisits: 3,
-      phone: '010-1234-5678',
-      status: 'completed',
-    },
-    {
-      id: '2',
-      patientId: 'p002',
-      patientName: '이철수',
-      age: 22,
-      gender: '남성',
-      lastVisit: '2024-01-18',
-      diagnosis: '여드름',
-      totalVisits: 5,
-      phone: '010-2345-6789',
-      status: 'ongoing',
-    },
-    {
-      id: '3',
-      patientId: 'p003',
-      patientName: '박민정',
-      age: 35,
-      gender: '여성',
-      lastVisit: '2024-01-15',
-      diagnosis: '아토피 피부염',
-      totalVisits: 8,
-      phone: '010-3456-7890',
-      status: 'completed',
-    },
-    {
-      id: '4',
-      patientId: 'p004',
-      patientName: '정수현',
-      age: 45,
-      gender: '남성',
-      lastVisit: '2024-01-10',
-      diagnosis: '건선',
-      totalVisits: 12,
-      phone: '010-4567-8901',
-      status: 'ongoing',
-    },
-    {
-      id: '5',
-      patientId: 'p005',
-      patientName: '최미영',
-      age: 31,
-      gender: '여성',
-      lastVisit: '2024-01-08',
-      diagnosis: '지루성 피부염',
-      totalVisits: 2,
-      phone: '010-5678-9012',
-      status: 'completed',
-    },
-  ];
+  useEffect(() => {
+    loadPatientHistory();
+  }, []);
+
+  const loadPatientHistory = async () => {
+    try {
+      setLoading(true);
+      const data = await patientApi.getDoctorPatients(TEMP_DOCTOR_ID);
+      setPatientHistory(data);
+      console.log('✅ 환자 목록 로드 성공:', data.length + '명');
+    } catch (error) {
+      console.error('❌ 환자 목록 로드 실패:', error);
+      Alert.alert('오류', '환자 목록을 불러올 수 없습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    try {
+      setRefreshing(true);
+      await loadPatientHistory();
+    } catch (error) {
+      console.error('❌ 새로고침 실패:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const filteredPatients = patientHistory.filter(patient =>
     patient.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -132,7 +93,7 @@ const PatientHistoryScreen: React.FC<Props> = ({ navigation }) => {
         <View style={styles.patientInfo}>
           <Text style={styles.patientName}>{item.patientName}</Text>
           <Text style={styles.patientDetails}>
-            {item.age}세, {item.gender} | {item.phone}
+            {item.age > 0 ? `${item.age}세` : '나이 정보 없음'}, {item.gender} | {item.phone}
           </Text>
         </View>
         <View style={styles.visitBadge}>
@@ -167,19 +128,53 @@ const PatientHistoryScreen: React.FC<Props> = ({ navigation }) => {
         >
           <Text style={styles.detailButtonText}>상세 기록</Text>
         </TouchableOpacity>
+        
         <TouchableOpacity 
-          style={styles.newVisitButton}
-          onPress={() => navigation.navigate('PatientDetail', {
-            patientId: item.patientId,
-            appointmentId: `new_${Date.now()}`,
-            patientName: item.patientName,
-          })}
+          style={[
+            styles.requestButton,
+            !item.hasDiagnosisRequest && styles.requestButtonDisabled
+          ]}
+          onPress={() => {
+            if (item.hasDiagnosisRequest && item.diagnosisRequestId) {
+              navigation.navigate('PatientDetail', {
+                patientId: item.patientId,
+                appointmentId: item.latestAppointmentId.toString(),
+                patientName: item.patientName,
+                diagnosisRequestId: item.diagnosisRequestId,
+              });
+            } else {
+              Alert.alert('알림', '환자가 진료 요청서를 제출하지 않았습니다.');
+            }
+          }}
         >
-          <Text style={styles.newVisitButtonText}>진료 요청서</Text>
+          <Text style={[
+            styles.requestButtonText,
+            !item.hasDiagnosisRequest && styles.requestButtonTextDisabled
+          ]}>
+            {item.hasDiagnosisRequest ? '진료 요청서' : '요청서 없음'}
+          </Text>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity >
+            <Text style={styles.backButton}></Text>
+          </TouchableOpacity>
+          <Text style={styles.title}>      환자 내역</Text>
+          <View style={styles.placeholder} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#2563eb" />
+          <Text style={styles.loadingText}>환자 목록을 불러오는 중...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -201,36 +196,20 @@ const PatientHistoryScreen: React.FC<Props> = ({ navigation }) => {
         />
       </View>
 
-      {/* 통계 정보 */}
-      <View style={styles.statsContainer}>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{patientHistory.length}</Text>
-          <Text style={styles.statLabel}>총 환자</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>
-            {patientHistory.filter(p => p.status === 'ongoing').length}
-          </Text>
-          <Text style={styles.statLabel}>치료 중</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>
-            {patientHistory.filter(p => p.status === 'completed').length}
-          </Text>
-          <Text style={styles.statLabel}>치료 완료</Text>
-        </View>
-      </View>
-
       {/* 환자 목록 */}
       <FlatList
         data={filteredPatients}
-        renderItem={renderPatientItem}
         keyExtractor={(item) => item.id}
+        renderItem={renderPatientItem}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>검색 결과가 없습니다.</Text>
+            <Text style={styles.emptyText}>
+              {searchTerm ? '검색 결과가 없습니다.' : '등록된 환자가 없습니다.'}
+            </Text>
           </View>
         }
       />
@@ -395,7 +374,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  newVisitButton: {
+  requestButton: {
     flex: 1,
     backgroundColor: '#2563eb',
     paddingVertical: 8,
@@ -403,10 +382,16 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     alignItems: 'center',
   },
-  newVisitButtonText: {
+  requestButtonDisabled: {
+    backgroundColor: '#d1d5db',
+  },
+  requestButtonText: {
     color: 'white',
     fontSize: 14,
     fontWeight: '500',
+  },
+  requestButtonTextDisabled: {
+    color: '#6b7280',
   },
   emptyContainer: {
     alignItems: 'center',
@@ -416,6 +401,16 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: '#6b7280',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#6b7280',
+    marginTop: 16,
   },
 });
 
