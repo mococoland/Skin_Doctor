@@ -10,17 +10,21 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { DoctorStackParamList } from '../types/navigation';
-import { medicalService, Appointment as AppointmentData } from '../services/medicalService';
+import { medicalService, Appointment as AppointmentData, medicalRecordApi, appointmentApi } from '../services/medicalService';
 
 type Props = NativeStackScreenProps<DoctorStackParamList, 'AppointmentList'>;
 
-const AppointmentListScreen: React.FC<Props> = ({ navigation }) => {
-  const [selectedTab, setSelectedTab] = useState<'all' | 'waiting' | 'completed' | 'upcoming'>('all');
+const AppointmentListScreen: React.FC<Props> = ({ navigation, route }) => {
+  // route params에서 초기 탭 가져오기 (기본값: 'all')
+  const initialTab = route.params?.initialTab || 'all';
+  const [selectedTab, setSelectedTab] = useState<'all' | 'waiting' | 'completed' | 'upcoming'>(initialTab);
   const [appointments, setAppointments] = useState<AppointmentData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [medicalRecordStatus, setMedicalRecordStatus] = useState<Record<number, boolean>>({});
 
   // 임시 의사 ID (실제로는 로그인 상태에서 가져와야 함)
   const TEMP_DOCTOR_ID = 1;
@@ -29,11 +33,38 @@ const AppointmentListScreen: React.FC<Props> = ({ navigation }) => {
     loadAppointments();
   }, []);
 
+  // 화면이 focus될 때마다 데이터 새로고침
+  useFocusEffect(
+    React.useCallback(() => {
+      loadAppointments();
+    }, [])
+  );
+
   const loadAppointments = async () => {
     try {
       setLoading(true);
       const data = await medicalService.getAppointments(TEMP_DOCTOR_ID);
       setAppointments(data);
+
+      // completed 상태인 예약들에 대해 진료 기록 존재 여부 확인
+      const completedAppointments = data.filter(apt => apt.status === 'completed');
+      const recordStatus: Record<number, boolean> = {};
+      
+      await Promise.all(
+        completedAppointments.map(async (appointment) => {
+          if (appointment.id) {
+            try {
+              const hasRecord = await medicalRecordApi.checkMedicalRecordExists(appointment.id);
+              recordStatus[appointment.id] = hasRecord;
+            } catch (error) {
+              console.error(`진료 기록 확인 실패 (예약 ID: ${appointment.id}):`, error);
+              recordStatus[appointment.id] = false;
+            }
+          }
+        })
+      );
+
+      setMedicalRecordStatus(recordStatus);
     } catch (error) {
       console.error('예약 목록 로딩 실패:', error);
       Alert.alert('오류', '예약 목록을 불러오는데 실패했습니다.');
@@ -42,31 +73,43 @@ const AppointmentListScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
+  // 예약 확정 처리
+  const handleConfirmAppointment = async (appointmentId: number) => {
+    try {
+      await appointmentApi.confirmAppointment(appointmentId);
+      Alert.alert('성공', '예약이 확정되었습니다.');
+      loadAppointments(); // 목록 새로고침
+    } catch (error) {
+      console.error('예약 확정 실패:', error);
+      Alert.alert('오류', '예약 확정에 실패했습니다.');
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'waiting':
+      case 'pending':
+        return '#f59e0b'; // 주황색 - 대기 중
       case 'confirmed':
-        return '#f59e0b';
+        return '#3b82f6'; // 파란색 - 확정됨  
       case 'completed':
-        return '#10b981';
-      case 'upcoming':
-      case 'scheduled':
-        return '#6b7280';
+        return '#10b981'; // 초록색 - 완료
+      case 'cancelled':
+        return '#ef4444'; // 빨간색 - 취소됨
       default:
-        return '#6b7280';
+        return '#6b7280'; // 회색 - 기본
     }
   };
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'waiting':
-      case 'confirmed':
+      case 'pending':
         return '대기 중';
+      case 'confirmed':
+        return '확정됨';
       case 'completed':
         return '완료';
-      case 'upcoming':
-      case 'scheduled':
-        return '예정';
+      case 'cancelled':
+        return '취소됨';
       default:
         return status;
     }
@@ -74,9 +117,9 @@ const AppointmentListScreen: React.FC<Props> = ({ navigation }) => {
 
   const filteredAppointments = appointments.filter(appointment => {
     if (selectedTab === 'all') return true;
-    if (selectedTab === 'waiting') return appointment.status === 'scheduled';
+    if (selectedTab === 'waiting') return appointment.status === 'pending';
     if (selectedTab === 'completed') return appointment.status === 'completed';
-    if (selectedTab === 'upcoming') return appointment.status === 'scheduled';
+    if (selectedTab === 'upcoming') return appointment.status === 'confirmed';
     return false;
   });
 
@@ -84,18 +127,19 @@ const AppointmentListScreen: React.FC<Props> = ({ navigation }) => {
     <TouchableOpacity
       style={styles.appointmentCard}
       onPress={() => navigation.navigate('PatientDetail', {
-        patientId: item.patient_id.toString(),
-        appointmentId: item.id.toString(),
-        patientName: '환자', // 실제로는 user 정보에서 가져와야 함
+        patientId: (item.user_id || 0).toString(),
+        appointmentId: (item.id || 0).toString(),
+        patientName: item.user?.username || '환자',
+        diagnosisRequestId: item.diagnosis_request_id,
       })}
     >
       <View style={styles.appointmentHeader}>
         <View style={styles.patientInfo}>
-          <Text style={styles.patientName}>환자 ID: {item.patient_id}</Text>
+          <Text style={styles.patientName}>{item.user?.username || `환자 ID: ${item.user_id || 'N/A'}`}</Text>
           <Text style={styles.patientDetails}>
             {item.appointment_date} | {item.appointment_time}
           </Text>
-          <Text style={styles.hospitalName}>{item.hospital?.name || '병원 정보 없음'}</Text>
+          <Text style={styles.consultationType}>📱 비대면 화상 진료</Text>
           <Text style={styles.consultationFee}>진료비: {item.doctor?.consultation_fee?.toLocaleString() || '0'}원</Text>
         </View>
         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
@@ -114,10 +158,14 @@ const AppointmentListScreen: React.FC<Props> = ({ navigation }) => {
           <Text style={styles.diagnosisRequestLabel}>📋 진료 요청서 첨부됨</Text>
           <TouchableOpacity 
             style={styles.viewRequestButton}
-            onPress={() => navigation.navigate('DiagnosisRequestDetail', {
-              requestId: item.diagnosis_request_id!,
-              patientId: item.patient_id.toString(),
-            })}
+            onPress={() => {
+              if (item.diagnosis_request_id && item.user_id) {
+                navigation.navigate('DiagnosisRequestDetail', {
+                  requestId: item.diagnosis_request_id,
+                  patientId: (item.user_id || 0).toString(),
+                })
+              }
+            }}
           >
             <Text style={styles.viewRequestButtonText}>상세 보기</Text>
           </TouchableOpacity>
@@ -125,13 +173,34 @@ const AppointmentListScreen: React.FC<Props> = ({ navigation }) => {
       )}
 
       <View style={styles.actionButtons}>
-        {item.status === 'scheduled' && (
+        {item.status === 'pending' && (
+          <TouchableOpacity 
+            style={styles.confirmButton}
+            onPress={() => {
+              Alert.alert(
+                '예약 확정',
+                '이 예약을 확정하시겠습니까?',
+                [
+                  { text: '취소', style: 'cancel' },
+                  { 
+                    text: '확정', 
+                    onPress: () => handleConfirmAppointment(item.id) 
+                  }
+                ]
+              );
+            }}
+          >
+            <Text style={styles.confirmButtonText}>예약 확정</Text>
+          </TouchableOpacity>
+        )}
+        {item.status === 'confirmed' && (
           <TouchableOpacity 
             style={styles.startButton}
             onPress={() => navigation.navigate('PatientDetail', {
-              patientId: item.patient_id.toString(),
-              appointmentId: item.id.toString(),
-              patientName: '환자',
+              patientId: (item.user_id || 0).toString(),
+              appointmentId: (item.id || 0).toString(),
+              patientName: item.user?.username || '환자',
+              diagnosisRequestId: item.diagnosis_request_id,
             })}
           >
             <Text style={styles.startButtonText}>진료 시작</Text>
@@ -140,21 +209,36 @@ const AppointmentListScreen: React.FC<Props> = ({ navigation }) => {
         {item.status === 'completed' && (
           <TouchableOpacity 
             style={styles.resultButton}
-            onPress={() => navigation.navigate('DiagnosisWrite', {
-              patientId: item.patient_id.toString(),
-              appointmentId: item.id.toString(),
-              patientName: '환자',
-            })}
+            onPress={() => {
+              if (medicalRecordStatus[item.id] === true) {
+                // 진료 기록이 있는 경우 조회 화면으로
+                navigation.navigate('MedicalRecordView', {
+                  appointmentId: (item.id || 0).toString(),
+                  patientName: item.user?.username || '환자',
+                });
+              } else {
+                // 진료 기록이 없는 경우 작성 화면으로
+                navigation.navigate('DiagnosisWrite', {
+                  patientId: (item.user_id || 0).toString(),
+                  appointmentId: (item.id || 0).toString(),
+                  patientName: item.user?.username || '환자',
+                  diagnosisRequestId: item.diagnosis_request_id,
+                });
+              }
+            }}
           >
-            <Text style={styles.resultButtonText}>결과 보기</Text>
+            <Text style={styles.resultButtonText}>
+              {medicalRecordStatus[item.id] === true ? '결과 보기' : '결과 작성'}
+            </Text>
           </TouchableOpacity>
         )}
         <TouchableOpacity 
           style={styles.detailButton}
           onPress={() => navigation.navigate('PatientDetail', {
-            patientId: item.patient_id.toString(),
-            appointmentId: item.id.toString(),
-            patientName: '환자',
+            patientId: (item.user_id || 0).toString(),
+            appointmentId: (item.id || 0).toString(),
+            patientName: item.user?.username || '환자',
+            diagnosisRequestId: item.diagnosis_request_id,
           })}
         >
           <Text style={styles.detailButtonText}>상세 정보</Text>
@@ -218,7 +302,7 @@ const AppointmentListScreen: React.FC<Props> = ({ navigation }) => {
         <FlatList
           data={filteredAppointments}
           renderItem={renderAppointmentItem}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => (item.id || 0).toString()}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
@@ -327,7 +411,7 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 2,
   },
-  hospitalName: {
+  consultationType: {
     fontSize: 14,
     color: '#666',
     marginBottom: 2,
@@ -390,6 +474,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
     gap: 8,
+  },
+  confirmButton: {
+    backgroundColor: '#00B4D8',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  confirmButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   startButton: {
     backgroundColor: '#00B4D8',

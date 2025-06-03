@@ -116,14 +116,22 @@ export type DoctorStackParamList = {
 
   // 메인 앱
   DashboardScreen: undefined
-  AppointmentList: undefined
+  AppointmentList: {
+    initialTab?: 'all' | 'waiting' | 'completed' | 'upcoming'
+  }
   PatientDetail: {
     patientId: string
     appointmentId: string
     patientName: string
+    diagnosisRequestId?: number
   }
   DiagnosisWrite: {
     patientId: string
+    appointmentId: string
+    patientName: string
+    diagnosisRequestId?: number
+  }
+  MedicalRecordView: {
     appointmentId: string
     patientName: string
   }

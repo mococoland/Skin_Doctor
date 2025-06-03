@@ -14,6 +14,7 @@ import DashboardScreen from "../screens/DashboardScreen"
 import AppointmentListScreen from "../screens/AppointmentListScreen"
 import PatientDetailScreen from "../screens/PatientDetailScreen"
 import DiagnosisWriteScreen from "../screens/DiagnosisWriteScreen"
+import MedicalRecordViewScreen from "../screens/MedicalRecordViewScreen"
 import DiagnosisRequestDetailScreen from "../screens/DiagnosisRequestDetailScreen"
 import PatientHistoryScreen from "../screens/PatientHistoryScreen"
 import PatientHistoryDetailScreen from "../screens/PatientHistoryDetailScreen"
@@ -55,6 +56,7 @@ const StackNavigator: React.FC = () => {
       <Stack.Screen name="AppointmentList" component={AppointmentListScreen} options={{ title: "예약 관리" }} />
       <Stack.Screen name="PatientDetail" component={PatientDetailScreen} options={{ title: "환자 상세" }} />
       <Stack.Screen name="DiagnosisWrite" component={DiagnosisWriteScreen} options={{ title: "진료 기록" }} />
+      <Stack.Screen name="MedicalRecordView" component={MedicalRecordViewScreen} options={{ title: "진료 기록 상세" }} />
       <Stack.Screen name="DiagnosisRequestDetail" component={DiagnosisRequestDetailScreen} options={{ title: "진료 요청서" }} />
       <Stack.Screen name="PatientHistory" component={PatientHistoryScreen} options={{ title: "환자 기록" }} />
       <Stack.Screen
