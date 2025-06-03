@@ -1,6 +1,6 @@
 // API 설정
 export const API_CONFIG = {
-  BASE_URL: 'http://localhost:8000',
+  BASE_URL: 'http://10.0.2.2:8000',
   ENDPOINTS: {
     // 인증 관련
     LOGIN: '/api/auth/login',

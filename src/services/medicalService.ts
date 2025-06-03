@@ -33,16 +33,31 @@ export interface Appointment {
   diagnosis?: string;
   doctor?: Doctor;
   hospital?: Hospital;
+  diagnosis_request_id?: number;
 }
 
 export interface DiagnosisRequest {
   id: number;
-  patient_id: number;
+  userId: number;
+  userName: string;
+  userAge: number;
+  userGender: string;
+  userPhone: string;
+  userEmail: string;
   symptoms: string;
-  status: 'pending' | 'in_progress' | 'completed';
-  created_at: string;
-  doctor_id?: number;
-  diagnosis?: string;
+  duration: string;
+  severity: 'mild' | 'moderate' | 'severe';
+  previousTreatment: string;
+  allergies: string;
+  medications: string;
+  medicalHistory: string;
+  additionalNotes: string;
+  images: string[];
+  status: 'pending' | 'reviewed' | 'completed';
+  createdAt: string;
+  reviewedByDoctorId?: number;
+  reviewNotes?: string;
+  reviewedAt?: string;
 }
 
 // 의사 관련 API
@@ -63,6 +78,17 @@ export const doctorApi = {
   getDoctorAvailableTimes: async (doctorId: number, date: string): Promise<string[]> => {
     const response = await apiCall(`${API_CONFIG.ENDPOINTS.DOCTORS}/${doctorId}/available-times?date=${date}`);
     return response.data.available_times || [];
+  },
+
+  // 의사 대시보드 통계 조회
+  getDashboardStats: async (doctorId: number): Promise<{
+    today_appointments: number;
+    pending_appointments: number;
+    completed_appointments: number;
+    total_patients: number;
+  }> => {
+    const response = await apiCall(`${API_CONFIG.ENDPOINTS.DOCTORS}/${doctorId}/dashboard-stats`);
+    return response.data;
   },
 };
 
@@ -147,6 +173,56 @@ export const diagnosisApi = {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
+    return response.data;
+  },
+};
+
+// 대시보드 통계 타입
+export interface DashboardStats {
+  today_appointments: number;
+  pending_appointments: number;
+  completed_appointments: number;
+  total_patients: number;
+}
+
+export const medicalService = {
+  // 의사 대시보드 통계 조회
+  getDashboardStats: async (doctorId: number): Promise<DashboardStats> => {
+    const response = await apiCall(`${API_CONFIG.ENDPOINTS.DOCTORS}/${doctorId}/dashboard-stats`);
+    return response.data;
+  },
+
+  // 예약 목록 조회 (의사별)
+  getAppointments: async (doctorId: number): Promise<Appointment[]> => {
+    const response = await apiCall(`${API_CONFIG.ENDPOINTS.APPOINTMENTS}?doctor_id=${doctorId}`);
+    return response;
+  },
+
+  // 진료 요청서 상세 조회
+  getDiagnosisRequest: async (requestId: number): Promise<DiagnosisRequest> => {
+    const response = await apiCall(`${API_CONFIG.ENDPOINTS.DIAGNOSIS_REQUESTS}/${requestId}`);
+    return response.data;
+  },
+
+  // 진료 요청서 목록 조회
+  getDiagnosisRequests: async (skip: number = 0, limit: number = 100): Promise<DiagnosisRequest[]> => {
+    const response = await apiCall(`${API_CONFIG.ENDPOINTS.DIAGNOSIS_REQUESTS}?skip=${skip}&limit=${limit}`);
+    return response.data;
+  },
+
+  // 진료 요청서 상태 업데이트
+  updateDiagnosisRequestStatus: async (requestId: number, data: {
+    status?: string;
+    reviewedByDoctorId?: number;
+    reviewNotes?: string;
+  }): Promise<DiagnosisRequest> => {
+    const response = await apiCall(
+      `${API_CONFIG.ENDPOINTS.DIAGNOSIS_REQUESTS}/${requestId}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }
+    );
     return response.data;
   },
 }; 

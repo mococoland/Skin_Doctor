@@ -127,6 +127,10 @@ export type DoctorStackParamList = {
     appointmentId: string
     patientName: string
   }
+  DiagnosisRequestDetail: {
+    requestId: number
+    patientId: string
+  }
   PatientHistory: undefined
   PatientHistoryDetail: {
     patientId: string

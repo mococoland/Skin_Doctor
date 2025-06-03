@@ -7,44 +7,31 @@ import { logout } from "../store/authSlice"
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import type { DoctorStackParamList } from "../types/navigation"
 import type { RootState } from "../store/store"
-import { appointmentApi, diagnosisApi, type Appointment, type DiagnosisRequest } from "../services/medicalService"
+import { appointmentApi, diagnosisApi, doctorApi, type Appointment, type DiagnosisRequest } from "../services/medicalService"
 
 type Props = NativeStackScreenProps<DoctorStackParamList, "DashboardScreen">
 
-const DashboardScreen: React.FC<Props> = ({ navigation }) => {
+const DashboardScreen = ({ navigation }: Props) => {
   const dispatch = useDispatch()
   const user = useSelector((state: RootState) => state.auth.user)
   
   // 상태 관리
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [diagnosisRequests, setDiagnosisRequests] = useState<DiagnosisRequest[]>([])
+  const [stats, setStats] = useState({
+    today_appointments: 0,
+    pending_appointments: 0,
+    completed_appointments: 0,
+    total_patients: 0
+  })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // 통계 데이터 계산
-  const getTodayAppointments = () => {
-    const today = new Date().toISOString().split('T')[0]
-    return appointments.filter(apt => apt.appointment_date === today)
-  }
-
-  const getPendingAppointments = () => {
-    return appointments.filter(apt => apt.status === 'scheduled')
-  }
-
-  const getCompletedAppointments = () => {
-    return appointments.filter(apt => apt.status === 'completed')
-  }
-
-  const getTotalPatients = () => {
-    const uniquePatients = new Set(appointments.map(apt => apt.patient_id))
-    return uniquePatients.size
-  }
-
   const statsData = [
-    { title: "오늘 예약", count: `${getTodayAppointments().length}건`, color: "#2563eb" },
-    { title: "대기 중", count: `${getPendingAppointments().length}건`, color: "#f59e0b" },
-    { title: "완료", count: `${getCompletedAppointments().length}건`, color: "#10b981" },
-    { title: "총 환자", count: `${getTotalPatients()}명`, color: "#8b5cf6" },
+    { title: "오늘 예약", count: `${stats.today_appointments}건`, color: "#2563eb" },
+    { title: "대기 중", count: `${stats.pending_appointments}건`, color: "#f59e0b" },
+    { title: "완료", count: `${stats.completed_appointments}건`, color: "#10b981" },
+    { title: "총 환자", count: `${stats.total_patients}명`, color: "#8b5cf6" },
   ]
 
   // 데이터 로드 함수
@@ -53,16 +40,16 @@ const DashboardScreen: React.FC<Props> = ({ navigation }) => {
       setLoading(true)
       setError(null)
       
-      // 현재 로그인한 의사의 ID (실제로는 인증 정보에서 가져와야 함)
-      const doctorId = user?.id || 1
+      // 의사 ID 고정 (1번)
+      const doctorId = 1
       
-      // 병렬로 데이터 로드
-      const [appointmentsData, diagnosisData] = await Promise.all([
-        appointmentApi.getAppointments(doctorId),
+      // 통계 데이터와 진단 요청 데이터를 병렬로 로드
+      const [statsData, diagnosisData] = await Promise.all([
+        doctorApi.getDashboardStats(doctorId),
         diagnosisApi.getDiagnosisRequests(doctorId)
       ])
       
-      setAppointments(appointmentsData)
+      setStats(statsData)
       setDiagnosisRequests(diagnosisData)
     } catch (err) {
       console.error('대시보드 데이터 로드 오류:', err)
