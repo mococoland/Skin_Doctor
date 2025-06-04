@@ -149,7 +149,7 @@ const DashboardScreen = ({ navigation }: Props) => {
     },
     {
       title: "프로필",
-      description: "개인 정보를를 관리하세요",
+      description: "개인 정보를 관리하세요",
       color: "#f97316", 
       screen: "DoctorProfile" as keyof DoctorStackParamList,
     },
