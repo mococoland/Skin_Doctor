@@ -196,9 +196,7 @@ const PatientHistoryDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.backButton}>← 뒤로</Text>
-          </TouchableOpacity>
+          
           <Text style={styles.title}>환자 상세 기록</Text>
           <View style={styles.placeholder} />
         </View>
@@ -214,9 +212,7 @@ const PatientHistoryDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.backButton}>← 뒤로</Text>
-          </TouchableOpacity>
+          
           <Text style={styles.title}>환자 상세 기록</Text>
           <View style={styles.placeholder} />
         </View>
@@ -230,9 +226,7 @@ const PatientHistoryDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>← 뒤로</Text>
-        </TouchableOpacity>
+        
         <Text style={styles.title}>환자 상세 기록</Text>
         <View style={styles.placeholder} />
       </View>
