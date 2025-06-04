@@ -14,6 +14,7 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { DoctorStackParamList } from '../types/navigation';
 import { patientApi, medicalService } from '../services/medicalService';
+import { API_CONFIG } from '../config/api';
 
 type Props = NativeStackScreenProps<DoctorStackParamList, 'PatientHistoryDetail'>;
 
@@ -105,7 +106,7 @@ const PatientHistoryDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       for (const appointment of completedAppointments) {
         try {
           // 각 예약에 대한 진료 기록 조회
-          const medicalRecordResponse = await fetch(`http://10.0.2.2:8000/api/medical/medical-records/appointment/${appointment.id}`);
+          const medicalRecordResponse = await fetch(`${API_CONFIG.BASE_URL}/api/medical/medical-records/appointment/${appointment.id}`);
           const medicalRecordData = await medicalRecordResponse.json();
           
           if (medicalRecordData.exists && medicalRecordData.data) {
