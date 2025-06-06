@@ -11,11 +11,12 @@ const getApiBaseUrl = () => {
         return process.env.REACT_APP_API_URL;
       }
       
-      // ADB reverse를 사용하는 경우: adb reverse tcp:8000 tcp:8000
+      // Port forwarding 사용 시: adb port-forward 8000 8000
+      // 또는 ADB reverse 사용 시: adb reverse tcp:8000 tcp:8000
       // 그러면 실제 기기에서도 localhost:8000 사용 가능
       // return 'http://localhost:8000';
       
-      // 에뮬레이터 전용 주소 (ADB reverse 미사용 시)
+      // 에뮬레이터 전용 주소 (port forwarding 미사용 시)
       return 'http://10.0.2.2:8000';
     } else {
       // iOS 시뮬레이터에서는 localhost 사용 가능

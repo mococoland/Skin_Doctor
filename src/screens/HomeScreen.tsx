@@ -1,5 +1,5 @@
 // 맨 처음 화면
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
+  BackHandler,
+  ToastAndroid,
 } from 'react-native';
 import { 
   Stethoscope, 
@@ -18,10 +20,37 @@ import {
 } from 'lucide-react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { DoctorStackParamList } from '../types/navigation';
+import { useFocusEffect } from '@react-navigation/native';
 
 type Props = NativeStackScreenProps<DoctorStackParamList, 'HomeScreen'>;
 
 const HomeScreen: React.FC<Props> = ({ navigation }) => {
+  const [backPressCount, setBackPressCount] = useState(0);
+
+  // 홈 화면에서만 뒤로가기 처리 (화면이 포커스 상태일 때만)
+  useFocusEffect(
+    React.useCallback(() => {
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+        if (backPressCount === 0) {
+          setBackPressCount(1);
+          ToastAndroid.show('한 번 더 누르면 앱이 종료됩니다.', ToastAndroid.SHORT);
+          
+          // 2초 후 카운트 리셋
+          setTimeout(() => {
+            setBackPressCount(0);
+          }, 2000);
+          
+          return true; // 기본 뒤로가기 동작 방지
+        } else {
+          BackHandler.exitApp(); // 앱 종료
+          return false;
+        }
+      });
+
+      return () => backHandler.remove();
+    }, [backPressCount])
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
